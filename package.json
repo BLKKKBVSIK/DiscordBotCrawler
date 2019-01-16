@@ -1,0 +1,21 @@
+{
+  "name": "BotDiscord",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bot.js",
+  "dependencies": {
+    "bot.js": "0.0.1",
+    "cheerio": "^1.0.0-rc.2",
+    "discord.js": "^11.4.2",
+    "moment": "^2.23.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
