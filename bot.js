@@ -9,21 +9,129 @@ const client = new Discord.Client();
 
 const rp = require('request-promise');
 const moment = require('moment');
+const http = require('http');
 const cheerio = require('cheerio');
+const ImageDataURI = require('image-data-uri');
+const sharp = require('sharp');
+const phantom = require('phantom');
 
 const top_characters = {
-    uri: `http://37.187.73.33/html/rotmg/top_characters.php`,
+    uri: `WebpageFetched/top_characters.php`,
     transform: function (body) {
       return cheerio.load(body);
     }
 };
 
 const top_pets = {
-    uri: `http://37.187.73.33/html/rotmg/top_pets.php`,
+    uri: `WebpageFetched/top_pets.php`,
     transform: function (body) {
       return cheerio.load(body);
     }
 };
+
+
+function playerOnPh(r, message, args) {
+    const characters = {
+        uri: `WebpageFetched/character.php?player=${args[0]}`,
+        transform: function (body) {
+        return cheerio.load(body);
+        }
+    };
+
+    rp(characters)
+        .then(($) => {
+
+                        var x = 0;
+                        var y = 0;
+    
+                        $('tbody').eq(1).find('tr').each(function(i, elem) {
+                            //console.log(`Perso=`+i +`// Fame=`+ Number($(this).find('td').eq(5).text()));
+                            if (Number($(this).find('td').eq(5).text()) > x) {
+                                x = Number($(this).find('td').eq(5).text())
+                                y = i
+                                
+                            }
+                        });
+                    
+                        const fameEmoji = client.emojis.find(emoji => emoji.name === "fame")
+                        //console.log(r);
+                        
+                        //console.log(`\n\n\nFinaly = `+ y+ `\nFinalx=` + x);
+                        
+                        
+                        sharp(`/var/www/html/rotmg/img/dimage${r}.png`).extract({ left: (y*50), top: 0, width: 50, height: 50 }).toFile(`/var/www/html/rotmg/img/cimage${r}.png`)
+                        .then(function(new_file_info) {
+                            //console.log("Image cropped and saved");
+                        })
+                        .catch(function(err) {
+                            //console.log(`An error occured:\n${err}`);
+                        });
+                        
+
+
+                        var bestPlayerName = $('.entity-name').text()
+                        var bestPlayerFame = $('tbody').eq(1).find('tr').eq(y).find('td').eq(5).text()
+                        var bestPlayerClass = $('tbody').eq(1).find('tr').eq(y).find('td').eq(2).text()
+                        var bestPlayerWeapon = $('tbody').eq(1).find('tr').eq(y).find('.item').eq(0).attr('title')
+                        var bestPlayerSpecial = $('tbody').eq(1).find('tr').eq(y).find('.item').eq(1).attr('title')
+                        var bestPlayerArmor = $('tbody').eq(1).find('tr').eq(y).find('.item').eq(2).attr('title')
+                        var bestPlayerRing = $('tbody').eq(1).find('tr').eq(y).find('.item').eq(3).attr('title')
+                        var bestPlayerStats = $('tbody').eq(1).find('tr').eq(y).find('td').eq(9).text()
+                        if (!isNaN(bestPlayerClass)) {
+                            var bestPlayerName = $('.entity-name').text()
+                            var bestPlayerFame = $('tbody').eq(1).find('tr').eq(y).find('td').eq(4).text()
+                            var bestPlayerClass = $('tbody').eq(1).find('tr').eq(y).find('td').eq(1).text()
+                            var bestPlayerWeapon = $('tbody').eq(1).find('tr').eq(y).find('.item').eq(0).attr('title')
+                            var bestPlayerSpecial = $('tbody').eq(1).find('tr').eq(y).find('.item').eq(1).attr('title')
+                            var bestPlayerArmor = $('tbody').eq(1).find('tr').eq(y).find('.item').eq(2).attr('title')
+                            var bestPlayerRing = $('tbody').eq(1).find('tr').eq(y).find('.item').eq(3).attr('title')
+                            var bestPlayerStats = $('tbody').eq(1).find('tr').eq(y).find('td').eq(8).text()
+                        }
+    
+                        const classEmoji = client.emojis.find(emoji => emoji.name === bestPlayerClass)
+                        const embedPlayer = new Discord.RichEmbed()
+                            .setColor(9804440)
+                            .setThumbnail(`WebpageFetched/img/cimage${r}.png`)
+                            .setURL(`https://www.realmeye.com/player/${args[0]}`)
+                            .addField(`**Name**`, `\`\`\`${bestPlayerName}\`\`\``, true)
+                            .addField(`**Maxed stats** 🥇`, `\`\`\`${bestPlayerStats}\`\`\``, true)
+                            .addField(`**His/Her fame** ${fameEmoji}`, `\`\`\`${bestPlayerFame}\`\`\``, true)
+                            .addField(`**His/Her class** ${classEmoji}`, `\`\`\`${bestPlayerClass}\`\`\``, true)
+                            .addField(`**Weapon** ⚔️`, `\`\`\`${bestPlayerWeapon}\`\`\``, true)
+                            .addField(`**Armor** 👕`, `\`\`\`${bestPlayerArmor}\`\`\``, true)
+                            .addField(`**Special** ✨`, `\`\`\`${bestPlayerSpecial}\`\`\``, true)
+                            .addField(`**Ring** 💍`, `\`\`\`${bestPlayerRing}\`\`\``, true)
+                        message.reply(embedPlayer);
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                    });
+}
+
+
+async function applyingToGuild(receivedMessage) {
+    receivedMessage.author.send({
+        files: [{
+            attachment: 'https://cdn.discordapp.com/attachments/364120257901625344/544488817038721035/bannerfofo.png',
+            name: 'banner.png'
+          }]      
+    })
+    let firstMsg = await receivedMessage.author.send("Hii, type something");
+
+    let filter = () => true; // you don't need it, since it's a DM.
+    let collected = await firstMsg.channel.awaitMessages(filter, {
+        maxMatches: 1, // you only need one message
+        time: 60000 // the time you want it to run for
+      }).catch(console.log);
+  
+    if (collected && collected.size > 0) {
+      let password = collected.first().content.split(' ')[0]; // grab the password
+      //collected.forEach(msg => msg.delete()); // delete every collected message (and so the password)
+      firstMsg.channel.send(password);
+    } else await firstMsg.edit("Command timed out :("); // no message has been received
+  
+    //firstMsg.delete(30000); // delete it after 30 seconds
+}
 
 // Here we load the config.json file that contains our token and our prefix values. 
 const config = require("./config.json");
@@ -49,6 +157,61 @@ client.on("guildDelete", guild => {
   // this event triggers when the bot is removed from a guild.
   console.log(`I have been removed from: ${guild.name} (id: ${guild.id})`);
 });
+
+
+// Create an event listener for new guild members
+client.on('guildMemberAdd', member => {
+    // Send the message to a designated channel on a server:
+    const channel = member.guild.channels.find(ch => ch.name === 'members-logs');
+    // Do nothing if the channel wasn't found on this server
+    if (!channel) return;
+    // Send the message, mentioning the member
+
+    let browserColor = "";
+    let verifiedColor = "";
+
+    if (member.user.client.browser == false) {
+        browserColor = "diff\n-"
+    } else {
+        browserColor = "css\n"
+    }
+
+    if (member.user.client.user.verified == false) {
+        verifiedColor = "diff\n-"
+    } else {
+        verifiedColor = "css\n"
+    }
+
+    let m = moment(member.joinedAt).format('DD-MM-YYYY');
+    let mTwo = moment(member.user.createdAt).format('DD-MM-YYYY');
+
+    const embedNewMember = new Discord.RichEmbed()
+        .setTitle(`**${member.user.username}#${member.user.discriminator}**`)
+        .setColor(9804440)
+        .setDescription(`Joined server on **${m}**\nJoined Discord on **${mTwo}**`)
+        .setThumbnail(`${member.user.avatarURL}`)
+        .addField(`**On browser**`, `\`\`\`${browserColor}${member.user.client.browser}\`\`\``, true)
+        .addField(`**Is Verified**`, `\`\`\`${verifiedColor}${member.user.client.user.verified}\`\`\``, true)
+
+    channel.send(embedNewMember);
+  });
+
+  client.on('guildMemberRemove', member => {
+    // Send the message to a designated channel on a server:
+    const channel = member.guild.channels.find(ch => ch.name === 'members-logs');
+    // Do nothing if the channel wasn't found on this server
+    if (!channel) return;
+    // Send the message, mentioning the member
+
+    let m = moment().format('DD-MM-YYYY');
+
+    const embedNewMember = new Discord.RichEmbed()
+        .setTitle(`**${member.user.username}#${member.user.discriminator}**`)
+        .setColor(16189721)
+        .setDescription(`Leaved the server on **${m}**`)
+        .setThumbnail(`${member.user.avatarURL}`)
+    channel.send(embedNewMember);
+  });
 
 client.on('error', console.error);
 
@@ -78,74 +241,6 @@ client.on("message", async message => {
     m.edit(`Pong! Latency is ${m.createdTimestamp - message.createdTimestamp}ms. API Latency is ${Math.round(client.ping)}ms`);
   }
 
-  if(command === "guildnews" || command === "guildno") {
-    if (command === "guildnews") {
-        if(!message.member.roles.some(r=>["Founder"].includes(r.name)) )
-            return message.reply("Sorry, you don't have permissions to use this!");
-        message.delete().catch(O_o=>{});
-        var interval = setInterval (function () {
-
-            rp(top_characters)
-                .then(($) => {
-                    //console.log($);
-
-                    let m = moment().format('DD-MM-YYYY');
-
-                    var name = $('.entity-name').text();
-                    var nbMembers = $('tbody').eq(0).find('tr').eq(0).find('td').eq(1).text()
-                    var nbCharacters = $('tbody').eq(0).find('tr').eq(1).find('td').eq(1).text()
-                    var actualFame = $('tbody').eq(0).find('tr').eq(2).find('td').eq(1).text()
-                    var actuelExp = $('tbody').eq(0).find('tr').eq(3).find('td').eq(1).text()
-                    var serverPosition = $('tbody').eq(0).find('tr').eq(4).find('td').eq(1).text()
-                    const fameEmoji = client.emojis.find(emoji => emoji.name === "fame")
-                    const expEmoji = client.emojis.find(emoji => emoji.name === "maxlevel")
-                    var bestPlayerName = $('tbody').eq(1).find('tr').find('td').eq(2).text()
-                    var bestPlayerFame = $('tbody').eq(1).find('tr').find('td').eq(3).text()
-                    var bestPlayerClass = $('tbody').eq(1).find('tr').find('td').eq(5).text()
-
-                    var bestPlayerWeapon = $('.item').eq(0).attr('title')
-                    var bestPlayerSpecial = $('.item').eq(1).attr('title')
-                    var bestPlayerArmor = $('.item').eq(2).attr('title')
-                    var bestPlayerRing = $('.item').eq(3).attr('title')
-
-                    const classEmoji = client.emojis.find(emoji => emoji.name === bestPlayerClass)
-
-                    const embed = new Discord.RichEmbed()
-                        .setTitle(`**${name} // ${serverPosition}**`)
-                        .setColor(9804440)
-                        .setDescription(`This is the report of the day (${m})\nHere are all the stats of the guild:\n`)
-                        .setURL("https://www.realmeye.com/guild/Sidekick")
-                        .setThumbnail("https://cdn.discordapp.com/avatars/534405090459779091/d5c58057a38a0cb349449131f48fdd55.png")
-                        .addField(`**Members**`, `\`\`\`${nbMembers}\`\`\``, true)
-                        .addField(`**Characters**`, `\`\`\`${nbCharacters}\`\`\``, true)
-                        .addField(`**Total fame** ${fameEmoji}`, `\`\`\`${actualFame}\`\`\``, true)
-                        .addField(`**Total EXP** ${expEmoji}`, `\`\`\`${actuelExp}\`\`\``, true)
-                        .addBlankField(false)
-                        .addBlankField(false)
-                        .addField(`**Actual best character** 🥇`, `\`\`\`${bestPlayerName}\`\`\``, false)
-                        .addField(`**His/Her fame** ${fameEmoji}`, `\`\`\`${bestPlayerFame}\`\`\``, true)
-                        .addField(`**His/Her class** ${classEmoji}`, `\`\`\`${bestPlayerClass}\`\`\``, true)
-                        .addField(`**Weapon** ⚔️`, `\`\`\`${bestPlayerWeapon}\`\`\``, true)
-                        .addField(`**Armor** 👕`, `\`\`\`${bestPlayerArmor}\`\`\``, true)
-                        .addField(`**Special** ✨`, `\`\`\`${bestPlayerSpecial}\`\`\``, true)
-                        .addField(`**Ring** 💍`, `\`\`\`${bestPlayerRing}\`\`\``, true)
-
-                      message.channel.send(embed);
-                    console.log("I've send a news");
-                })
-                .catch((err) => {
-                    console.log(err);
-                });
-        }, 1 * 86400000);
-        storage = interval;
-    }
-    if (command === "guildno") {
-        message.delete().catch(O_o=>{});
-        message.reply("I've stopped to fetch news");
-        clearInterval(storage);
-    }
-  }
-
   if(command === "classinfo") {
     if (args[0]) {
         var classInfo = args[0].toLowerCase();
@@ -163,6 +258,37 @@ client.on("message", async message => {
     }
   }
 
+
+
+    if(command === "guild") {
+        rp(top_characters)
+            .then(($) => {
+                var nbMembers = $('tbody').eq(0).find('tr').eq(0).find('td').eq(1).text()
+                var name = $('.entity-name').text();
+                var nbCharacters = $('tbody').eq(0).find('tr').eq(1).find('td').eq(1).text()
+                var actualFame = $('tbody').eq(0).find('tr').eq(2).find('td').eq(1).text()
+                var actuelExp = $('tbody').eq(0).find('tr').eq(3).find('td').eq(1).text()
+                var serverPosition = $('tbody').eq(0).find('tr').eq(4).find('td').eq(1).text()
+                const fameEmoji = client.emojis.find(emoji => emoji.name === "fame")
+                const expEmoji = client.emojis.find(emoji => emoji.name === "maxlevel")
+                const embed = new Discord.RichEmbed()
+                    .setTitle(`**${name} // ${serverPosition}**`)
+                    .setColor(9804440)
+                    .setDescription(`Here are all the stats of the guild:\n`)
+                    .setURL("https://www.realmeye.com/guild/Sidekick")
+                    .setThumbnail("https://cdn.discordapp.com/avatars/534405090459779091/d5c58057a38a0cb349449131f48fdd55.png")
+                    .addField(`**Members**`, `\`\`\`${nbMembers}\`\`\``, true)
+                    .addField(`**Characters**`, `\`\`\`${nbCharacters}\`\`\``, true)
+                    .addField(`**Total fame** ${fameEmoji}`, `\`\`\`${actualFame}\`\`\``, true)
+                    .addField(`**Total EXP** ${expEmoji}`, `\`\`\`${actuelExp}\`\`\``, true)
+                message.reply(embed);
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
+    }
+
+
   if(command === "bestplayer") {
     rp(top_characters)
                 .then(($) => {
@@ -170,6 +296,7 @@ client.on("message", async message => {
                     var bestPlayerName = $('tbody').eq(1).find('tr').find('td').eq(2).text()
                     var bestPlayerFame = $('tbody').eq(1).find('tr').find('td').eq(3).text()
                     var bestPlayerClass = $('tbody').eq(1).find('tr').find('td').eq(5).text()
+                    var bestPlayerStats = $('tbody').eq(1).find('tr').find('td').eq(7).text()
                     var bestPlayerWeapon = $('.item').eq(0).attr('title')
                     var bestPlayerSpecial = $('.item').eq(1).attr('title')
                     var bestPlayerArmor = $('.item').eq(2).attr('title')
@@ -178,7 +305,8 @@ client.on("message", async message => {
                     const embedBestPlayer = new Discord.RichEmbed()
                         .setColor(9804440)
                         .setThumbnail("https://cdn.discordapp.com/avatars/534405090459779091/d5c58057a38a0cb349449131f48fdd55.png")
-                        .addField(`**Actual best character** 🥇`, `\`\`\`${bestPlayerName}\`\`\``, false)
+                        .addField(`**Actual best character** 🥇`, `\`\`\`${bestPlayerName}\`\`\``, true)
+                        .addField(`**Maxed stats** 🥇`, `\`\`\`${bestPlayerStats}\`\`\``, true)
                         .addField(`**His/Her fame** ${fameEmoji}`, `\`\`\`${bestPlayerFame}\`\`\``, true)
                         .addField(`**His/Her class** ${classEmoji}`, `\`\`\`${bestPlayerClass}\`\`\``, true)
                         .addField(`**Weapon** ⚔️`, `\`\`\`${bestPlayerWeapon}\`\`\``, true)
@@ -191,6 +319,149 @@ client.on("message", async message => {
                     console.log(err);
                 });
   }
+
+
+  if(command === "player") {
+    if (args[0]) {
+        phantom.create().then(function(ph) {
+            ph.createPage().then(function(page) {
+              page.open(`WebpageFetched/character.php?player=${args[0]}`).then(function(status) {
+                //console.log(status);
+                page.property('content').then(function(content) {
+                    var $ = cheerio.load(content);
+                    var notFound = $('.player-not-found').find('li').text()
+                    var notFound = notFound.substr(0, 12);
+    
+                    if (notFound == `haven't seen`)
+                    {
+                        message.reply(`I did'nt find the player "${args[0]}"`);
+                        return;
+                    }
+                    else {
+                        var playerBackground = $('#playerBackground').text()
+                        let r = Math.random().toString(36).substring(15) + Math.random().toString(36).substring(2, 15);
+                        console.log(playerBackground);
+                        ImageDataURI.outputFile(playerBackground, `/var/www/html/rotmg/img/dimage${r}.png`);
+                        setTimeout(() => playerOnPh(r, message, args), 500);
+                    }
+                  page.close();
+                  ph.exit();
+                });
+              });
+            });
+          });
+
+                
+    } else {
+        message.reply(`You need to indicate me a player name`)
+    }
+}
+
+
+if(command === "playerstats") {
+    if (args[0]) {
+        const characters = {
+            uri: `WebpageFetched/character.php?player=${args[0]}`,
+            transform: function (body) {
+            return cheerio.load(body);
+            }
+        };
+        rp(characters)
+            .then(($) => {
+
+                var notFound = $('.player-not-found').find('li').text()
+                var notFound = notFound.substr(0, 12);
+
+                if (notFound == `haven't seen`)
+                {
+                    message.reply(`I did'nt find the player "${args[0]}"`);
+                    return;
+                }
+                else {
+
+                    var x = 0;
+                    var y = 0;
+
+                    $('tbody').eq(1).find('tr').each(function(i, elem) {
+                        if (Number($(this).find('td').eq(5).text()) > x) {
+                            x = Number($(this).find('td').eq(5).text())
+                            y = i
+                        }
+                    });
+                    var bestPlayerClass = $('tbody').eq(1).find('tr').eq(y).find('td').eq(2).text()
+                    var bestPlayerName = $('.entity-name').text()
+                    var url = `http://www.tiffit.net/RealmInfo/api/user?u=${args[0]}`;
+
+
+                    var stats_maxed = 0;
+                    var stats_hp = 0;
+                    var stats_mp = 0;
+                    var stats_attack = 0;
+                    var stats_defense = 0;
+                    var stats_speed = 0;
+                    var stats_vitality = 0;
+                    var stats_wisdom = 0;
+                    var stats_dexterity = 0;
+
+                    http.get(url, function(res){
+                        var body = '';
+
+                        res.on('data', function(chunk){
+                            body += chunk;
+                        });
+
+                        res.on('end', function(){
+                            var json = JSON.parse(body);
+                            var h = 0;
+                            while (h < parseInt(json.characterCount))
+                            {
+                                if (parseInt(json.characters[h].fame) == x)
+                                {
+                                    stats_maxed = JSON.stringify(json.characters[h].stats_maxed);
+                                    stats_hp = JSON.stringify(json.characters[h].stats.hp);
+                                    stats_mp = JSON.stringify(json.characters[h].stats.mp);
+                                    stats_attack = JSON.stringify(json.characters[h].stats.attack);
+                                    stats_defense = JSON.stringify(json.characters[h].stats.defense);
+                                    stats_speed = JSON.stringify(json.characters[h].stats.speed);
+                                    stats_vitality = JSON.stringify(json.characters[h].stats.vitality);
+                                    stats_wisdom = JSON.stringify(json.characters[h].stats.wisdom);
+                                    stats_dexterity = JSON.stringify(json.characters[h].stats.dexterity);
+
+                                    const classEmoji = client.emojis.find(emoji => emoji.name === bestPlayerClass)
+                                    const embedPlayer = new Discord.RichEmbed()
+                                        .setColor(9804440)
+                                        .setDescription(`Here is the stats of the ${classEmoji} of ${bestPlayerName}`)
+                                        .setThumbnail("https://cdn.discordapp.com/avatars/534405090459779091/d5c58057a38a0cb349449131f48fdd55.png")
+                                        .addField(`**Maxed Stats**`, `\`\`\`${stats_maxed}\`\`\``, false)
+                                        .addField(`**HP**`, `\`\`\`${stats_hp}\`\`\``, true)
+                                        .addField(`**MP**`, `\`\`\`${stats_mp}\`\`\``, true)
+                                        .addField(`**Attack**`, `\`\`\`${stats_attack}\`\`\``, true)
+                                        .addField(`**Defense**`, `\`\`\`${stats_defense}\`\`\``, true)
+                                        .addField(`**Speed**`, `\`\`\`${stats_speed}\`\`\``, true)
+                                        .addField(`**Vitality**`, `\`\`\`${stats_vitality}\`\`\``, true)
+                                        .addField(`**Wisdom**`, `\`\`\`${stats_wisdom}\`\`\``, true)
+                                        .addField(`**Dexterity**`, `\`\`\`${stats_dexterity}\`\`\``, true)
+                                    message.reply(embedPlayer);
+
+                                }
+                                h++;
+                            } 
+                            
+                        });
+                    }).on('error', function(e){
+                        message.reply("Got an error: ", e);
+                    });
+                }
+            })
+            .catch((err) => {
+                console.log(err);
+            });
+    }
+    else {
+        message.reply(`You need to indicate me a player name`)
+    }
+}
+
 
   if(command === "bestpet") {
     rp(top_pets)
@@ -209,7 +480,7 @@ client.on("message", async message => {
                         .addField(`**Rarity** ✨`, `\`\`\`${bestPetRarity}\`\`\``, true)
                         .addField(`**Family** 🐱`, `\`\`\`${bestPetFamily}\`\`\``, true)
                         .addField(`**Ability1**`, `\`\`\`${bestPetAby1}\`\`\``, true)
-                        .addField(`**Aility2**`, `\`\`\`${bestPetAby2}\`\`\``, true)
+                        .addField(`**Ability2**`, `\`\`\`${bestPetAby2}\`\`\``, true)
                         .addField(`**Ability3**`, `\`\`\`${bestPetAby3}\`\`\``, true)
                         .addField(`**Owner**`, `\`\`\`${bestPetOwner}\`\`\``, true)
                     message.reply(embedBestPet);
@@ -219,27 +490,75 @@ client.on("message", async message => {
                 });
   }
 
+if(command === "pet") {
+    if (args[0]) {
+        const pets = {
+            uri: `WebpageFetched/pet.php?player=${args[0]}`,
+            transform: function (body) {
+            return cheerio.load(body);
+            }
+        };
+
+        rp(pets)
+                    .then(($) => {
+
+                        var notFound = $('.player-not-found').find('li').text()
+                        var notFound = notFound.substr(0, 12);
+
+                        if (notFound == `haven't seen`)
+                        {
+                            message.reply(`I did'nt find the player "${args[0]}"`);
+                            return;
+                        }
+                        else {
+                            var bestPetName = $('tbody').eq(1).find('tr').find('td').eq(1).text()
+                            var bestPetRarity = $('tbody').eq(1).find('tr').find('td').eq(2).text()
+                            var bestPetFamily = $('tbody').eq(1).find('tr').find('td').eq(3).text()
+                            var bestPetAby1 = $('tbody').eq(1).find('tr').find('td').eq(5).text() + "(Lvl." + $('tbody').eq(1).find('tr').find('td').eq(6).text() + ")"
+                            var bestPetAby2 = $('tbody').eq(1).find('tr').find('td').eq(7).text() + "(Lvl." + $('tbody').eq(1).find('tr').find('td').eq(8).text() + ")"
+                            var bestPetAby3 = $('tbody').eq(1).find('tr').find('td').eq(9).text() + "(Lvl." + $('tbody').eq(1).find('tr').find('td').eq(10).text() + ")"
+                            var bestPetPlace = $('tbody').eq(1).find('tr').find('td').eq(4).text()
+                            const embedBestPet = new Discord.RichEmbed()
+                                .setColor(9804440)
+                                .setThumbnail("https://cdn.discordapp.com/avatars/534405090459779091/d5c58057a38a0cb349449131f48fdd55.png")
+                                .addField(`**Name** 🦄`, `\`\`\`${bestPetName}\`\`\``, false)
+                                .addField(`**Rarity** ✨`, `\`\`\`${bestPetRarity}\`\`\``, true)
+                                .addField(`**Family** 🐱`, `\`\`\`${bestPetFamily}\`\`\``, true)
+                                .addField(`**Ability1**`, `\`\`\`${bestPetAby1}\`\`\``, true)
+                                .addField(`**Aility2**`, `\`\`\`${bestPetAby2}\`\`\``, true)
+                                .addField(`**Ability3**`, `\`\`\`${bestPetAby3}\`\`\``, true)
+                                .addField(`**Place**`, `\`\`\`${bestPetPlace}\`\`\``, true)
+                            message.reply(embedBestPet);
+                        }
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                    });
+    }
+    else {
+        message.reply(`You need to indicate me a player name`)
+    }
+}
+
+if(command === "apply") {
+    return applyingToGuild(message);
+    //message.author.send("Hii")
+}
+
+
   if(command === "help") {
     const embedHelp = new Discord.RichEmbed()
         .setColor(9804440)
         .addField(`**Best pet in the guild**`, `\`\`\`+bestpet\`\`\``, false)
+        .addField(`**Best pet in the guild**`, `\`\`\`+pet {name}\`\`\``, false)
         .addField(`**Best character in the guild**`, `\`\`\`+bestplayer\`\`\``, false)
+        .addField(`**Fetch player info**`, `\`\`\`+player {name}\`\`\``, false)
         .addField(`**Guide for each classes**`, `\`\`\`+classinfo {class name}\`\`\``, false)
+        .addField(`**Guild stats**`, `\`\`\`+guild\`\`\``, false)
         .addField(`**Latence of the bot**`, `\`\`\`+ping\`\`\``, false)
+        .addField(`**Get the stats of a player**`, `\`\`\`+playerstats {name}\`\`\``, false)
     message.reply(embedHelp);
   }
-
-  /*
-  if(command === "say") {
-    // makes the bot say something and delete the message. As an example, it's open to anyone to use. 
-    // To get the "message" itself we join the `args` back into a string with spaces: 
-    const sayMessage = args.join(" ");
-    // Then we delete the command message (sneaky, right?). The catch just ignores the error with a cute smiley thing.
-    message.delete().catch(O_o=>{}); 
-    // And we get the bot to say the thing: 
-    message.channel.send(sayMessage);
-  }
-  */
   
   if(command === "purge") {
     // This command removes all messages from all users in the channel, up to 100.
