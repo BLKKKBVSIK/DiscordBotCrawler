@@ -16,14 +16,14 @@ const sharp = require('sharp');
 const phantom = require('phantom');
 
 const top_characters = {
-    uri: `http://37.187.73.33/html/rotmg/top_characters.php`,
+    uri: `http://127.0.0.1/html/WebpageFetched/top_characters.php`,
     transform: function (body) {
       return cheerio.load(body);
     }
 };
 
 const top_pets = {
-    uri: `http://37.187.73.33/html/rotmg/top_pets.php`,
+    uri: `http://127.0.0.1/html/WebpageFetched/top_pets.php`,
     transform: function (body) {
       return cheerio.load(body);
     }
@@ -32,7 +32,7 @@ const top_pets = {
 
 function playerOnPh(r, message, args) {
     const characters = {
-        uri: `http://37.187.73.33/html/rotmg/character.php?player=${args[0]}`,
+        uri: `http://127.0.0.1/html/WebpageFetched/character.php?player=${args[0]}`,
         transform: function (body) {
         return cheerio.load(body);
         }
@@ -92,7 +92,7 @@ function playerOnPh(r, message, args) {
                         const classEmoji = client.emojis.find(emoji => emoji.name === bestPlayerClass)
                         const embedPlayer = new Discord.RichEmbed()
                             .setColor(9804440)
-                            .setThumbnail(`http://37.187.73.33/html/rotmg/img/cimage${r}.png`)
+                            .setThumbnail(`http://127.0.0.1/html/WebpageFetched/img/cimage${r}.png`)
                             .setURL(`https://www.realmeye.com/player/${args[0]}`)
                             .addField(`**Name**`, `\`\`\`${bestPlayerName}\`\`\``, true)
                             .addField(`**Maxed stats** 🥇`, `\`\`\`${bestPlayerStats}\`\`\``, true)
@@ -329,7 +329,7 @@ client.on("message", async message => {
     if (args[0]) {
         phantom.create().then(function(ph) {
             ph.createPage().then(function(page) {
-              page.open(`http://37.187.73.33/html/rotmg/character.php?player=${args[0]}`).then(function(status) {
+              page.open(`http://127.0.0.1/html/WebpageFetched/character.php?player=${args[0]}`).then(function(status) {
                 //console.log(status);
                 page.property('content').then(function(content) {
                     var $ = cheerio.load(content);
@@ -370,7 +370,7 @@ if(command === "playerstats") {
         
         phantom.create().then(function(ph) {
             ph.createPage().then(function(page) {
-              page.open(`http://37.187.73.33/html/rotmg/character.php?player=${args[0]}`).then(function(status) {
+              page.open(`http://127.0.0.1/html/WebpageFetched/character.php?player=${args[0]}`).then(function(status) {
                 //console.log(status);
                 page.property('content').then(function(content) {
 
@@ -508,7 +508,7 @@ if(command === "playerstats") {
 if(command === "pet") {
     if (args[0]) {
         const pets = {
-            uri: `http://37.187.73.33/html/rotmg/pet.php?player=${args[0]}`,
+            uri: `http://127.0.0.1/html/WebpageFetched/pet.php?player=${args[0]}`,
             transform: function (body) {
             return cheerio.load(body);
             }
