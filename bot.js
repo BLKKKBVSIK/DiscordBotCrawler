@@ -16,14 +16,14 @@ const sharp = require('sharp');
 const phantom = require('phantom');
 
 const top_characters = {
-    uri: `WebpageFetched/top_characters.php`,
+    uri: `http://127.0.0.1/html/WebpageFetched/top_characters.php`,
     transform: function (body) {
       return cheerio.load(body);
     }
 };
 
 const top_pets = {
-    uri: `WebpageFetched/top_pets.php`,
+    uri: `http://127.0.0.1/html/WebpageFetched/top_pets.php`,
     transform: function (body) {
       return cheerio.load(body);
     }
@@ -32,7 +32,7 @@ const top_pets = {
 
 function playerOnPh(r, message, args) {
     const characters = {
-        uri: `WebpageFetched/character.php?player=${args[0]}`,
+        uri: `http://127.0.0.1/html/WebpageFetched/character.php?player=${args[0]}`,
         transform: function (body) {
         return cheerio.load(body);
         }
@@ -40,6 +40,7 @@ function playerOnPh(r, message, args) {
 
     rp(characters)
         .then(($) => {
+            if ($('.nav-pills').find('li').eq(0).find('a').text() != "Characters (0)") {
 
                         var x = 0;
                         var y = 0;
@@ -91,7 +92,7 @@ function playerOnPh(r, message, args) {
                         const classEmoji = client.emojis.find(emoji => emoji.name === bestPlayerClass)
                         const embedPlayer = new Discord.RichEmbed()
                             .setColor(9804440)
-                            .setThumbnail(`WebpageFetched/img/cimage${r}.png`)
+                            .setThumbnail(`http://127.0.0.1/html/WebpageFetched/img/cimage${r}.png`)
                             .setURL(`https://www.realmeye.com/player/${args[0]}`)
                             .addField(`**Name**`, `\`\`\`${bestPlayerName}\`\`\``, true)
                             .addField(`**Maxed stats** 🥇`, `\`\`\`${bestPlayerStats}\`\`\``, true)
@@ -102,7 +103,10 @@ function playerOnPh(r, message, args) {
                             .addField(`**Special** ✨`, `\`\`\`${bestPlayerSpecial}\`\`\``, true)
                             .addField(`**Ring** 💍`, `\`\`\`${bestPlayerRing}\`\`\``, true)
                         message.reply(embedPlayer);
-                    })
+                    } else {
+                        message.reply("This player don't have any character alive at the the moment.")
+                    }
+                })
                     .catch((err) => {
                         console.log(err);
                     });
@@ -325,7 +329,7 @@ client.on("message", async message => {
     if (args[0]) {
         phantom.create().then(function(ph) {
             ph.createPage().then(function(page) {
-              page.open(`WebpageFetched/character.php?player=${args[0]}`).then(function(status) {
+              page.open(`http://127.0.0.1/html/WebpageFetched/character.php?player=${args[0]}`).then(function(status) {
                 //console.log(status);
                 page.property('content').then(function(content) {
                     var $ = cheerio.load(content);
@@ -357,107 +361,118 @@ client.on("message", async message => {
     }
 }
 
-
 if(command === "playerstats") {
     if (args[0]) {
-        const characters = {
-            uri: `WebpageFetched/character.php?player=${args[0]}`,
-            transform: function (body) {
-            return cheerio.load(body);
-            }
-        };
-        rp(characters)
-            .then(($) => {
 
-                var notFound = $('.player-not-found').find('li').text()
-                var notFound = notFound.substr(0, 12);
+        var x = 0;
+        var y = 0;
+        var k = [];
+        
+        phantom.create().then(function(ph) {
+            ph.createPage().then(function(page) {
+              page.open(`http://127.0.0.1/html/WebpageFetched/character.php?player=${args[0]}`).then(function(status) {
+                //console.log(status);
+                page.property('content').then(function(content) {
 
-                if (notFound == `haven't seen`)
-                {
-                    message.reply(`I did'nt find the player "${args[0]}"`);
-                    return;
-                }
-                else {
+                    var $ = cheerio.load(content);
+                    var notFound = $('.player-not-found').find('li').text()
+                    var notFound = notFound.substr(0, 12);
+    
+                    if (notFound == `haven't seen`)
+                    {
+                        message.reply(`I did'nt find the player "${args[0]}"`);
+                        return;
+                    }
+                    else {
 
-                    var x = 0;
-                    var y = 0;
+                        $('tbody').eq(1).find('tr').each(function(i, elem) {
+                            var res = $(this).find('td').eq(5).text().replace(/\D/g, "");
+                            res = parseInt(res, 10);
+                            k[i] = res;
+                            if (res > x) {
+                                x = res
+                                y = i
+                            }
+        
+                        })
 
-                    $('tbody').eq(1).find('tr').each(function(i, elem) {
-                        if (Number($(this).find('td').eq(5).text()) > x) {
-                            x = Number($(this).find('td').eq(5).text())
-                            y = i
+                        stats_hp = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(0).find('td').eq(0).text().substr(4);
+                        stats_mp = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(0).find('td').eq(1).text().substr(4);
+                        stats_attack = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(1).find('td').eq(0).text().substr(5);
+                        stats_defense = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(1).find('td').eq(1).text().substr(5);
+                        stats_speed = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(1).find('td').eq(2).text().substr(5);
+                        stats_vitality = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(2).find('td').eq(0).text().substr(5);
+                        stats_wisdom = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(2).find('td').eq(1).text().substr(5);
+                        stats_dexterity = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(2).find('td').eq(2).text().substr(5);
+
+                        hp_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(0).find('td').eq(0).text().split("(").pop().replace(")", '');
+                        mp_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(0).find('td').eq(1).text().split("(").pop().replace(")", '');
+                        atk_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(1).find('td').eq(0).text();
+                        def_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(1).find('td').eq(1).text();
+                        spd_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(1).find('td').eq(2).text();
+                        vit_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(2).find('td').eq(0).text();
+                        wis_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(2).find('td').eq(1).text();
+                        dex_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(2).find('td').eq(2).text();
+
+                        var maxedStatsCount = 0;
+                        if(!hp_left) {
+                        hp_left = "**MAXED**";
+                        maxedStatsCount++
                         }
-                    });
-                    var bestPlayerClass = $('tbody').eq(1).find('tr').eq(y).find('td').eq(2).text()
-                    var bestPlayerName = $('.entity-name').text()
-                    var url = `http://www.tiffit.net/RealmInfo/api/user?u=${args[0]}`;
+                        if(!mp_left) {
+                        mp_left = "**MAXED**";
+                        maxedStatsCount++
+                        }
+                        if(!atk_left) {
+                        atk_left = "**MAXED**";
+                        maxedStatsCount++
+                        }
+                        if(!def_left) {
+                        def_left = "**MAXED**";
+                        maxedStatsCount++
+                        }
+                        if(!spd_left) {
+                        spd_left = "**MAXED**";
+                        maxedStatsCount++
+                        }
+                        if(!vit_left) {
+                        vit_left = "**MAXED**";
+                        maxedStatsCount++
+                        }
+                        if(!wis_left) {
+                        wis_left = "**MAXED**";
+                        maxedStatsCount++
+                        }
+                        if(!dex_left) {
+                        dex_left = "**MAXED**";
+                        maxedStatsCount++
+                        }
 
-
-                    var stats_maxed = 0;
-                    var stats_hp = 0;
-                    var stats_mp = 0;
-                    var stats_attack = 0;
-                    var stats_defense = 0;
-                    var stats_speed = 0;
-                    var stats_vitality = 0;
-                    var stats_wisdom = 0;
-                    var stats_dexterity = 0;
-
-                    http.get(url, function(res){
-                        var body = '';
-
-                        res.on('data', function(chunk){
-                            body += chunk;
-                        });
-
-                        res.on('end', function(){
-                            var json = JSON.parse(body);
-                            var h = 0;
-                            while (h < parseInt(json.characterCount))
-                            {
-                                if (parseInt(json.characters[h].fame) == x)
-                                {
-                                    stats_maxed = JSON.stringify(json.characters[h].stats_maxed);
-                                    stats_hp = JSON.stringify(json.characters[h].stats.hp);
-                                    stats_mp = JSON.stringify(json.characters[h].stats.mp);
-                                    stats_attack = JSON.stringify(json.characters[h].stats.attack);
-                                    stats_defense = JSON.stringify(json.characters[h].stats.defense);
-                                    stats_speed = JSON.stringify(json.characters[h].stats.speed);
-                                    stats_vitality = JSON.stringify(json.characters[h].stats.vitality);
-                                    stats_wisdom = JSON.stringify(json.characters[h].stats.wisdom);
-                                    stats_dexterity = JSON.stringify(json.characters[h].stats.dexterity);
-
-                                    const classEmoji = client.emojis.find(emoji => emoji.name === bestPlayerClass)
-                                    const embedPlayer = new Discord.RichEmbed()
-                                        .setColor(9804440)
-                                        .setDescription(`Here is the stats of the ${classEmoji} of ${bestPlayerName}`)
-                                        .setThumbnail("https://cdn.discordapp.com/avatars/534405090459779091/d5c58057a38a0cb349449131f48fdd55.png")
-                                        .addField(`**Maxed Stats**`, `\`\`\`${stats_maxed}\`\`\``, false)
-                                        .addField(`**HP**`, `\`\`\`${stats_hp}\`\`\``, true)
-                                        .addField(`**MP**`, `\`\`\`${stats_mp}\`\`\``, true)
-                                        .addField(`**Attack**`, `\`\`\`${stats_attack}\`\`\``, true)
-                                        .addField(`**Defense**`, `\`\`\`${stats_defense}\`\`\``, true)
-                                        .addField(`**Speed**`, `\`\`\`${stats_speed}\`\`\``, true)
-                                        .addField(`**Vitality**`, `\`\`\`${stats_vitality}\`\`\``, true)
-                                        .addField(`**Wisdom**`, `\`\`\`${stats_wisdom}\`\`\``, true)
-                                        .addField(`**Dexterity**`, `\`\`\`${stats_dexterity}\`\`\``, true)
-                                    message.reply(embedPlayer);
-
-                                }
-                                h++;
-                            } 
-                            
-                        });
-                    }).on('error', function(e){
-                        message.reply("Got an error: ", e);
-                    });
-                }
-            })
-            .catch((err) => {
-                console.log(err);
+                        const bestPlayerName = $('.entity-name').text()
+                        const embedPlayer = new Discord.RichEmbed()
+                            .setColor(9804440)
+                            .setDescription(`Here is the stats of the best character of ${bestPlayerName}`)
+                            .setThumbnail("https://cdn.discordapp.com/avatars/534405090459779091/d5c58057a38a0cb349449131f48fdd55.png")
+                            .addField(`**Maxed Stats**`, `\`\`\`${maxedStatsCount.toString()}/8\`\`\``, false)
+                            .addField(`**HP** | ${hp_left}`, `\`\`\`${stats_hp}\`\`\``, true)
+                            .addField(`**MP** | ${mp_left}`, `\`\`\`${stats_mp}\`\`\``, true)
+                            .addField(`**ATK** | ${atk_left}`, `\`\`\`${stats_attack}\`\`\``, true)
+                            .addField(`**DEF** | ${def_left}`, `\`\`\`${stats_defense}\`\`\``, true)
+                            .addField(`**SPD** | ${spd_left}`, `\`\`\`${stats_speed}\`\`\``, true)
+                            .addField(`**VIT** | ${vit_left}`, `\`\`\`${stats_vitality}\`\`\``, true)
+                            .addField(`**WIS** | ${wis_left}`, `\`\`\`${stats_wisdom}\`\`\``, true)
+                            .addField(`**DEX** | ${dex_left}`, `\`\`\`${stats_dexterity}\`\`\``, true)
+                        message.reply(embedPlayer);
+                    }
+                  page.close();
+                  ph.exit();
+                });
+              });
             });
-    }
-    else {
+          });
+
+                
+    } else {
         message.reply(`You need to indicate me a player name`)
     }
 }
@@ -493,7 +508,7 @@ if(command === "playerstats") {
 if(command === "pet") {
     if (args[0]) {
         const pets = {
-            uri: `WebpageFetched/pet.php?player=${args[0]}`,
+            uri: `http://127.0.0.1/html/WebpageFetched/pet.php?player=${args[0]}`,
             transform: function (body) {
             return cheerio.load(body);
             }
