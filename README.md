@@ -1,3 +1,4 @@
+
 # RealmeyeDiscordBotCrawler
 
 RealmeyeDiscordBotCrawler is a NodeJS, scraping/crawling, Discord bot using DiscordJS library.
@@ -6,6 +7,12 @@ It include:
 
   - WebpageFetched, some webpage to put on a webserver in order to be fetched by the bot.
   - config.json, you can change the prefix and the credidentials of the bot here.
+
+#### Todo List :
+Add character image to +playerstats command (WIP)
+Add character image to +bestplayer command
+Add pet image to +bestpet command
+Add pet image to +pet command
 
 ### Install
 
@@ -43,8 +50,8 @@ Here is the commands that you can use with the bot.
 | bestplayer | [print best player info (Click for demo)](https://image.noelshack.com/fichiers/2019/17/2/1556042378-screenshot-2019-04-23-at-20-57-27.png) |
 | bestpet | [print best pet info (Click for demo)](https://image.noelshack.com/fichiers/2019/17/2/1556042378-screenshot-2019-04-23-at-20-57-37.png) |
 | playerstats | [print stats and needed pots to be maxed (Click for demo)](https://image.noelshack.com/fichiers/2019/17/2/1556042378-screenshot-2019-04-23-at-20-59-17.png) |
-| classinfo | [display the basic class info](https://image.noelshack.com/fichiers/2019/17/2/1556042727-screenshot-2019-04-23-at-21-04-56.png) |
-| guild | [display guild info](https://image.noelshack.com/fichiers/2019/17/2/1556042378-screenshot-2019-04-23-at-20-58-05.png) |
+| classinfo | [display the basic class info (Click for demo)](https://image.noelshack.com/fichiers/2019/17/2/1556042727-screenshot-2019-04-23-at-21-04-56.png) |
+| guild | [display guild info (Click for demo)](https://image.noelshack.com/fichiers/2019/17/2/1556042378-screenshot-2019-04-23-at-20-58-05.png) |
 
 ### Goal
 The project has no goal, its only here for my own entertainment, but if you're interested by a feature, or has any question, you can send me a message via Discord: BLKKKBVSIK#7298 or by email: contact@enzoconty.dev
