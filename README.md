@@ -9,9 +9,11 @@ It include:
   - config.json, you can change the prefix and the credidentials of the bot here.
 
 #### Todo List :
-Add character image to +playerstats command (WIP)
-Add character image to +bestplayer command
+
+Add character image to +bestplayer command (WIP) . 
+
 Add pet image to +bestpet command
+
 Add pet image to +pet command
 
 ### Install
