@@ -100,6 +100,101 @@ function playerOnPh(r, message, args) {
         });
 }
 
+function playerStatsOnPh(r, message, args, content) {
+            var $ = cheerio.load(content);
+            if ($('.nav-pills').find('li').eq(0).find('a').text() != "Characters (0)") {
+
+                var x = 0;
+                var y = 0;
+
+                $('tbody').eq(1).find('tr').each(function (i, elem) {
+                    if (Number($(this).find('td').eq(5).text()) > x) {
+                        x = Number($(this).find('td').eq(5).text())
+                        y = i
+
+                    }
+                });
+
+               sharp(`/var/www/html/rotmg/img/dimage${r}.png`).extract({ left: (y * 50), top: 0, width: 50, height: 50 }).toFile(`/var/www/html/rotmg/img/cimage${r}.png`)
+               .then(function (new_file_info) {
+                   //console.log("Image cropped and saved");
+               })
+               .catch(function (err) {
+                   //console.log(`An error occured:\n${err}`);
+               });
+
+                stats_hp = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(0).find('td').eq(0).text().substr(4);
+                stats_mp = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(0).find('td').eq(1).text().substr(4);
+                stats_attack = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(1).find('td').eq(0).text().substr(5);
+                stats_defense = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(1).find('td').eq(1).text().substr(5);
+                stats_speed = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(1).find('td').eq(2).text().substr(5);
+                stats_vitality = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(2).find('td').eq(0).text().substr(5);
+                stats_wisdom = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(2).find('td').eq(1).text().substr(5);
+                stats_dexterity = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(2).find('td').eq(2).text().substr(5);
+
+                hp_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(0).find('td').eq(0).text().split("(").pop().replace(")", '');
+                mp_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(0).find('td').eq(1).text().split("(").pop().replace(")", '');
+                atk_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(1).find('td').eq(0).text();
+                def_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(1).find('td').eq(1).text();
+                spd_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(1).find('td').eq(2).text();
+                vit_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(2).find('td').eq(0).text();
+                wis_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(2).find('td').eq(1).text();
+                dex_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(2).find('td').eq(2).text();
+
+                var maxedStatsCount = 0;
+                if (!hp_left) {
+                    hp_left = "**MAXED**";
+                    maxedStatsCount++
+                }
+                if (!mp_left) {
+                    mp_left = "**MAXED**";
+                    maxedStatsCount++
+                }
+                if (!atk_left) {
+                    atk_left = "**MAXED**";
+                    maxedStatsCount++
+                }
+                if (!def_left) {
+                    def_left = "**MAXED**";
+                    maxedStatsCount++
+                }
+                if (!spd_left) {
+                    spd_left = "**MAXED**";
+                    maxedStatsCount++
+                }
+                if (!vit_left) {
+                    vit_left = "**MAXED**";
+                    maxedStatsCount++
+                }
+                if (!wis_left) {
+                    wis_left = "**MAXED**";
+                    maxedStatsCount++
+                }
+                if (!dex_left) {
+                    dex_left = "**MAXED**";
+                    maxedStatsCount++
+                }
+
+                const bestPlayerName = $('.entity-name').text()
+                const embedPlayer = new Discord.RichEmbed()
+                    .setColor(9804440)
+                    .setDescription(`Here is the stats of the best character of ${bestPlayerName}`)
+                    .setThumbnail(`http://127.0.0.1/html/WebpageFetched/img/cimage${r}.png`)
+                    .addField(`**Maxed Stats**`, `\`\`\`${maxedStatsCount.toString()}/8\`\`\``, false)
+                    .addField(`**HP** | ${hp_left}`, `\`\`\`${stats_hp}\`\`\``, true)
+                    .addField(`**MP** | ${mp_left}`, `\`\`\`${stats_mp}\`\`\``, true)
+                    .addField(`**ATK** | ${atk_left}`, `\`\`\`${stats_attack}\`\`\``, true)
+                    .addField(`**DEF** | ${def_left}`, `\`\`\`${stats_defense}\`\`\``, true)
+                    .addField(`**SPD** | ${spd_left}`, `\`\`\`${stats_speed}\`\`\``, true)
+                    .addField(`**VIT** | ${vit_left}`, `\`\`\`${stats_vitality}\`\`\``, true)
+                    .addField(`**WIS** | ${wis_left}`, `\`\`\`${stats_wisdom}\`\`\``, true)
+                    .addField(`**DEX** | ${dex_left}`, `\`\`\`${stats_dexterity}\`\`\``, true)
+                message.reply(embedPlayer);
+            } else {
+                message.reply("This player don't have any character alive at the the moment.")
+            }
+}
+
 const config = require("./config.json");
 var storage = 0;
 
@@ -274,7 +369,6 @@ client.on("message", async message => {
                             else {
                                 var playerBackground = $('#playerBackground').text()
                                 let r = Math.random().toString(36).substring(15) + Math.random().toString(36).substring(2, 15);
-                                console.log(playerBackground);
                                 ImageDataURI.outputFile(playerBackground, `/var/www/html/rotmg/img/dimage${r}.png`);
                                 setTimeout(() => playerOnPh(r, message, args), 500);
                             }
@@ -291,18 +385,14 @@ client.on("message", async message => {
         }
     }
 
+
     if (command === "playerstats") {
         if (args[0]) {
-
-            var x = 0;
-            var y = 0;
-            var k = [];
-
             phantom.create().then(function (ph) {
                 ph.createPage().then(function (page) {
                     page.open(`http://127.0.0.1/html/WebpageFetched/character.php?player=${args[0]}`).then(function (status) {
+                        //console.log(status);
                         page.property('content').then(function (content) {
-
                             var $ = cheerio.load(content);
                             var notFound = $('.player-not-found').find('li').text()
                             var notFound = notFound.substr(0, 12);
@@ -312,85 +402,10 @@ client.on("message", async message => {
                                 return;
                             }
                             else {
-
-                                $('tbody').eq(1).find('tr').each(function (i, elem) {
-                                    var res = $(this).find('td').eq(5).text().replace(/\D/g, "");
-                                    res = parseInt(res, 10);
-                                    k[i] = res;
-                                    if (res > x) {
-                                        x = res
-                                        y = i
-                                    }
-
-                                })
-
-                                stats_hp = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(0).find('td').eq(0).text().substr(4);
-                                stats_mp = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(0).find('td').eq(1).text().substr(4);
-                                stats_attack = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(1).find('td').eq(0).text().substr(5);
-                                stats_defense = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(1).find('td').eq(1).text().substr(5);
-                                stats_speed = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(1).find('td').eq(2).text().substr(5);
-                                stats_vitality = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(2).find('td').eq(0).text().substr(5);
-                                stats_wisdom = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(2).find('td').eq(1).text().substr(5);
-                                stats_dexterity = $('tbody').eq(1).find('tr').eq(y).find('#statsnum').eq(2).find('td').eq(2).text().substr(5);
-
-                                hp_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(0).find('td').eq(0).text().split("(").pop().replace(")", '');
-                                mp_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(0).find('td').eq(1).text().split("(").pop().replace(")", '');
-                                atk_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(1).find('td').eq(0).text();
-                                def_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(1).find('td').eq(1).text();
-                                spd_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(1).find('td').eq(2).text();
-                                vit_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(2).find('td').eq(0).text();
-                                wis_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(2).find('td').eq(1).text();
-                                dex_left = $('tbody').eq(1).find('tr').eq(y).find('#statsleft').eq(2).find('td').eq(2).text();
-
-                                var maxedStatsCount = 0;
-                                if (!hp_left) {
-                                    hp_left = "**MAXED**";
-                                    maxedStatsCount++
-                                }
-                                if (!mp_left) {
-                                    mp_left = "**MAXED**";
-                                    maxedStatsCount++
-                                }
-                                if (!atk_left) {
-                                    atk_left = "**MAXED**";
-                                    maxedStatsCount++
-                                }
-                                if (!def_left) {
-                                    def_left = "**MAXED**";
-                                    maxedStatsCount++
-                                }
-                                if (!spd_left) {
-                                    spd_left = "**MAXED**";
-                                    maxedStatsCount++
-                                }
-                                if (!vit_left) {
-                                    vit_left = "**MAXED**";
-                                    maxedStatsCount++
-                                }
-                                if (!wis_left) {
-                                    wis_left = "**MAXED**";
-                                    maxedStatsCount++
-                                }
-                                if (!dex_left) {
-                                    dex_left = "**MAXED**";
-                                    maxedStatsCount++
-                                }
-
-                                const bestPlayerName = $('.entity-name').text()
-                                const embedPlayer = new Discord.RichEmbed()
-                                    .setColor(9804440)
-                                    .setDescription(`Here is the stats of the best character of ${bestPlayerName}`)
-                                    .setThumbnail("https://cdn.discordapp.com/avatars/534405090459779091/d5c58057a38a0cb349449131f48fdd55.png")
-                                    .addField(`**Maxed Stats**`, `\`\`\`${maxedStatsCount.toString()}/8\`\`\``, false)
-                                    .addField(`**HP** | ${hp_left}`, `\`\`\`${stats_hp}\`\`\``, true)
-                                    .addField(`**MP** | ${mp_left}`, `\`\`\`${stats_mp}\`\`\``, true)
-                                    .addField(`**ATK** | ${atk_left}`, `\`\`\`${stats_attack}\`\`\``, true)
-                                    .addField(`**DEF** | ${def_left}`, `\`\`\`${stats_defense}\`\`\``, true)
-                                    .addField(`**SPD** | ${spd_left}`, `\`\`\`${stats_speed}\`\`\``, true)
-                                    .addField(`**VIT** | ${vit_left}`, `\`\`\`${stats_vitality}\`\`\``, true)
-                                    .addField(`**WIS** | ${wis_left}`, `\`\`\`${stats_wisdom}\`\`\``, true)
-                                    .addField(`**DEX** | ${dex_left}`, `\`\`\`${stats_dexterity}\`\`\``, true)
-                                message.reply(embedPlayer);
+                                var playerBackground = $('#playerBackground').text()
+                                let r = Math.random().toString(36).substring(15) + Math.random().toString(36).substring(2, 15);
+                                ImageDataURI.outputFile(playerBackground, `/var/www/html/rotmg/img/dimage${r}.png`);
+                                setTimeout(() => playerStatsOnPh(r, message, args, content), 500);
                             }
                             page.close();
                             ph.exit();
